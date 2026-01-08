@@ -184,8 +184,7 @@ export const deleteJob = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const jobDoc = await job.findById(id);
     const user = await User.findOne({ auth0Id: req.oidc.user.sub });
-    i
-    f (!jobDoc) {
+    if (!jobDoc) {
       return res.status(404).json({ message: "Job not found" });
     }
     if (!user) {
