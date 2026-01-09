@@ -3,16 +3,10 @@ import Job from '../models/jobModel.js';
 
 /**
  * Fetches jobs from JSearch API and saves them to MongoDB
+ * @param {string} searchQuery - The job title/location to search for
+ * @param {object} io - The Socket.io instance for real-time updates
  */
-
-
-
-// this is for automatically refresh the job list on client side
-// Inside the loop in jobSync.js
-// const savedJob = await Job.findOneAndUpdate(...);
-// const io = req.app.get("io");
-// io.emit("newJobAvailable", savedJob);
-const syncExternalJobs = async (searchQuery = "Software Engineer") => {
+const syncExternalJobs = async (searchQuery = "Software Engineer", io) => {
     console.log(`📡 Starting API Sync for: ${searchQuery}...`);
 
     const options = {
@@ -24,7 +18,7 @@ const syncExternalJobs = async (searchQuery = "Software Engineer") => {
             num_pages: '1'
         },
         headers: {
-            'x-rapidapi-key': process.env.RAPID_API_KEY, // Found in RapidAPI Endpoints
+            'x-rapidapi-key': process.env.RAPID_API_KEY,
             'x-rapidapi-host': 'jsearch.p.rapidapi.com'
         }
     };
@@ -39,7 +33,7 @@ const syncExternalJobs = async (searchQuery = "Software Engineer") => {
         }
 
         for (const job of apiJobs) {
-            // Mapping JSearch data to YOUR Mongoose Schema
+            // 1. Prepare the data object
             const jobData = {
                 title: job.job_title,
                 location: job.job_city && job.job_country 
@@ -53,20 +47,25 @@ const syncExternalJobs = async (searchQuery = "Software Engineer") => {
                 skills: ["Contact Recruiter"], 
                 tags: [job.job_title, "API"],
                 externalId: job.job_id, 
-                
-                // ✅ UPDATED: Captures the original source (e.g., LinkedIn, Indeed)
                 source: job.job_publisher || "JSearch", 
-                
-                // REQUIRED: Replace this string with your real Admin User ID from MongoDB
-                createdBy: "6983d3e65amsh446c01914719602p11c88bjsn97b67cdd8104" 
+                createdBy: "67307854d3a71f000523fd75" // Your verified Admin ID
             };
 
-            // Prevents duplicates by searching for the externalId
-            await Job.findOneAndUpdate(
+            // 2. Check if it's a new job or existing one
+            const existingJob = await Job.findOne({ externalId: job.job_id });
+
+            // 3. Update or Create (Upsert)
+            const savedJob = await Job.findOneAndUpdate(
                 { externalId: job.job_id },
                 jobData,
                 { upsert: true, new: true, runValidators: true }
-            );
+            ).populate("createdBy", "name profilePicture");
+
+            // 4. Emit to frontend ONLY if it's a brand new job and socket is available
+            if (io && !existingJob && savedJob) {
+                console.log(`🚀 Broadcasting new job: ${savedJob.title}`);
+                io.emit("newJobAvailable", savedJob);
+            }
         }
 
         console.log(`✅ Successfully synced ${apiJobs.length} jobs.`);

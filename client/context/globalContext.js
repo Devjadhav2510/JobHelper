@@ -110,7 +110,7 @@ export const GlobalContextProvider =({children})   => {
         getUserProfile(auth0User.sub);
     }
 }, [isAuthenticated, auth0User]);
-    console.log(auth0User);
+    console.log("Auth0 User:", auth0User?.name);
     return (
         <GlobalContext.Provider value={{
             isAuthenticated,

@@ -37,7 +37,8 @@ function JobCard({ job, activeJob }: JobProps) {
     source, // ✅ Destructure the new source field
   } = job;
 
-  const { name, profilePicture } = createdBy;
+  const recruiterName = createdBy?.name || "JobHelper Recruiter";
+const recruiterAvatar = createdBy?.profilePicture || "/user.png";
 
   const handleLike = (id: string) => {
     likeJob(id);
@@ -90,8 +91,8 @@ function JobCard({ job, activeJob }: JobProps) {
         >
           <div className="w-12 h-12 bg-gray-200 rounded-md flex items-center justify-center overflow-hidden">
             <Image
-              src={profilePicture || "/user.png"}
-              alt={name || "User"}
+              src={recruiterAvatar || "/user.png"}
+              alt={recruiterName || "User"}
               width={40}
               height={40}
               className="rounded-md object-cover"
@@ -101,7 +102,7 @@ function JobCard({ job, activeJob }: JobProps) {
           <div className="flex flex-col">
             <h4 className="group-hover:text-[#7263f3] font-bold transition-colors">{title}</h4>
             <p className="text-xs text-gray-500">
-              {name} • {applicants.length}{" "}
+              {recruiterName} • {applicants.length}{" "}
               {applicants.length === 1 ? "Applicant" : "Applicants"}
             </p>
           </div>

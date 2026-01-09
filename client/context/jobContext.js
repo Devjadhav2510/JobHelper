@@ -9,6 +9,7 @@ import { io } from "socket.io-client";
 
 
 
+
 const socket = io("http://localhost:8000");
 
 
@@ -22,7 +23,8 @@ axios.defaults.withCredentials = true;
 
 export const JobsContextProvider =({children})   => { 
     const router = useRouter();
-    const {userProfile}=useGlobalContext();   
+    const {userProfile}=useGlobalContext(); 
+    const {  auth0User } = useGlobalContext();  
 
     const [jobs,setJobs]=useState([]);
     const [loading,setLoading]=useState(false);
@@ -52,7 +54,7 @@ export const JobsContextProvider =({children})   => {
         setLoading(true);
         try {
             const res = await axios.get("/api/v1/jobs");
-            console.log("Fetched jobs:", res.data);
+            console.log("Current User:", JSON.stringify(auth0User, null, 2));
             setJobs(res.data );
         } catch (error) {
             console.error("Error fetching jobs", error);
@@ -67,17 +69,18 @@ export const JobsContextProvider =({children})   => {
         try {
             const res = await axios.post("/api/v1/jobs", jobData);
             toast.success("Job created successfully");
+            const newJob = res.data.Newjob;
 
-            setJobs((prevJobs) => [res.data, ...prevJobs]);
+            setJobs((prevJobs) => [newJob, ...prevJobs]);
             //update userjobs
             if(userProfile._id){
 
-                setUserJobs((prevUserJobs) => [res.data, ...prevUserJobs]);
+                setUserJobs((prevUserJobs) => [newJob, ...prevUserJobs]);
                 await getUserJobs(userProfile._id);
             }
             await getJobs();
             
-            router.push(`/job/${res.data._id}`);
+            router.push(`/job/${newJob._id}`);
         } catch (error) {
             console.error("Error creating job", error);
             

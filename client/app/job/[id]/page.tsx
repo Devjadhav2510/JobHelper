@@ -25,12 +25,24 @@ function Page() {
   const job = jobs.find((job: Job) => job._id === id);
   const otherJobs = jobs.filter((job: Job) => job._id !== id);
 
+  
+  if (!job) return null;
   // 2. DERIVED STATE (No useEffect or useState needed here)
   // These variables recalculate automatically whenever job or userProfile changes
-  const isLiked = job.likes.includes(userProfile?._id);
-  const isApplied = job.applicants.includes(userProfile?._id);
+  // const isLiked = job.likes.includes(userProfile?._id);
+  // const isApplied = job.applicants.includes(userProfile?._id);
+  // ✅ Safe arrays for likes/applicants (handles undefined/null)
+  const likes = Array.isArray(job.likes) ? job.likes : [];
+  const applicants = Array.isArray(job.applicants) ? job.applicants : [];
 
-  if (!job) return null;
+  
+  // ✅ Derived booleans (no extra state/useEffect needed)
+  const isLiked =
+    !!userProfile?._id && likes.includes(userProfile._id);
+  const isApplied =
+    !!userProfile?._id && applicants.includes(userProfile._id);
+
+  
 
   const {
     title,
@@ -38,14 +50,14 @@ function Page() {
     description,
     salary,
     createdBy,
-    applicants,
     jobType,
     createdAt,
     salaryType,
     negotiable,
   } = job;
 
-  const { name, profilePicture } = createdBy;
+  const recruiterName = createdBy?.name || "JobHelper Recruiter";
+const recruiterAvatar = createdBy?.profilePicture || "/user.png";
 
   const handleLike = (jobId: string) => {
     // Just call the context function. 
@@ -72,8 +84,8 @@ function Page() {
               <div className="flex items-center gap-2">
                 <div className="w-14 h-14 relative overflow-hidden rounded-md flex items-center justify-center bg-gray-200">
                   <Image
-                    src={profilePicture || "/user.png"}
-                    alt={name || "User"}
+                    src={recruiterAvatar || "/user.png"}
+                    alt={recruiterName || "User"}
                     width={45}
                     height={45}
                     className="rounded-md"
@@ -81,7 +93,7 @@ function Page() {
                 </div>
 
                 <div>
-                  <p className="font-bold">{name}</p>
+                  <p className="font-bold">{recruiterName}</p>
                   <p className="text-sm">Recruiter</p>
                 </div>
               </div>

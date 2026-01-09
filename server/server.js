@@ -93,23 +93,26 @@ const ensureUserInDB = asyncHandler(async (user) => {
 });
 
 // --- AUTOMATION: CRON JOB ---
-cron.schedule('0 * * * *', async () => {
-  const io = app.get("io"); // ✅ Get io instance
+cron.schedule('0 0 * * *', async () => {
+   // ✅ Get io instance
   await syncExternalJobs("Software Engineer", io); // ✅ Pass it here
   console.log('--- Running Hourly Job Sync ---');
   try {
-    await syncExternalJobs("Software Engineer");
+    const io = app.get("io");
+    await syncExternalJobs("Software Engineer",io);
+    res.send("Sync process started. Check your website!");
   } catch (err) {
     console.error("Cron Job Error:", err.message);
   }
 });
 
 // --- MANUAL TEST ROUTE ---
-app.get("/api/v1/sync-now", asyncHandler(async (req, res) => {
-  console.log("Manual Sync Requested...");
-  await syncExternalJobs("React Developer");
-  res.send("Sync process started. Check console for details.");
-}));
+// app.get("/api/v1/sync-now", asyncHandler(async (req, res) => {
+//   console.log("Manual Sync Requested...");
+//   const io = req.app.get("io");
+//   await syncExternalJobs("React Developer");
+//   res.send("Sync process started. Check console for details.");
+// }));
 
 app.get("/", async (req, res) => {
   if (req.oidc.isAuthenticated()) {
